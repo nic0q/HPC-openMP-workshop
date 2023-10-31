@@ -16,7 +16,6 @@ int main(int argc, char *argv[]) {
     buffer[yo] = 5 * yo;  // produzco un item
     flag[yo] = 1;         // aviso que el dato esta en el buffer
 
-
     vecino = (yo == 0 ? 1 : 0);
     while (flag[vecino] == 0);                                    // espero por el item
     #pragma omp barrier           // sincronizo
@@ -26,5 +25,4 @@ int main(int argc, char *argv[]) {
     printf("RES %d\n", result);
     }
   }
-  
 }

@@ -1,4 +1,3 @@
-// gcc -fopenmp mean.c -o mean
 #include <omp.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,8 +13,8 @@ int main(void) {
     for(int i = 0; i < N; i++){
       acum += arr[i];
     }
+    #pragma omp single
+    printf("Suma %.2f\n", acum * 1./ N);
   }
   //printf("XXXX %.3f\n", float convertion of (* 1.) acum / N);
-  printf("Suma %.2f\n", acum * 1./ N);
 }
-
