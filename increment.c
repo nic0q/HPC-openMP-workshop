@@ -9,13 +9,11 @@ de salir del bloque paralelo*/
 int main(void) {
   int a = 0;
   int n = 5;
-  #pragma omp parallel shared(a, n) num_threads(n)
-  {
-    #pragma omp for reduction(+:a) // Se divide automáticamente el trabajo, reduction
-    for(int i = 0; i < n; i++){
-      a++;
-    } // Barrera implícita al finalizar el for
-    #pragma omp single
-    printf("Sum: %d\n", a);
-  }
+  #pragma omp parallel num_threads(n) reduction(+ : a)
+    #pragma omp for
+      for(int i = 0; i < n; i++){
+        a++;
+      }
+    #pragma single
+    printf("%d\n", a);
 }

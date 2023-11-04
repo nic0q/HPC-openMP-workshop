@@ -1,7 +1,5 @@
 #include <omp.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+
 
 int main(void) {
   int arr[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -13,8 +11,9 @@ int main(void) {
     for(int i = 0; i < N; i++){
       acum += arr[i];
     }
-    #pragma omp single
-    printf("Suma %.2f\n", acum * 1./ N);
+
+    
   }
+
   //printf("XXXX %.3f\n", float convertion of (* 1.) acum / N);
 }
