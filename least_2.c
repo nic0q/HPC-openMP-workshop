@@ -9,8 +9,7 @@ int main(void) {
   int arr[10] = {1,2,3,4,-2,-42,-45,100,290,0};
   int min_global = arr[0];
   int min_local = arr[0];
-  double start;
-  double end;
+  double start, end;
   start = omp_get_wtime();
   #pragma omp parallel firstprivate(min_local) shared(min_global)
   {
