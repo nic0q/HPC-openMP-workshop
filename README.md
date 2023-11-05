@@ -1,4 +1,111 @@
-# openMP-HPC-workshop
+## Multiplicación matricial paralela
+
+### Algoritmo secuencial
+```c
+double start_s, end_s;
+int N = 512;
+int* mat_1 = calloc(N * N, sizeof(int));
+int* mat_2 = calloc(N * N, sizeof(int));
+int* mat_3 = calloc(N * N, sizeof(int));
+int* mat_4 = calloc(N * N, sizeof(int));
+```
+```c
+start_s = omp_get_wtime();
+  for (int i = 0; i < N; i++) {   // O(N**3)
+    for (int j = 0; j < N; j++) {
+      sum = 0;
+      for (int k = 0; k < N; k++) {
+        sum += mat_1[i * N + k] * mat_2[k * N + j];
+      }
+      mat_3[i * N + j] = sum;
+    }
+  }
+  end_s = omp_get_wtime();
+```
+### Multiplicación matricial paralela
+```c
+double start_p, end_p;
+start_p = omp_get_wtime();
+  #pragma omp parallel for
+    for (int i = 0; i < N; i++) { 
+      for (int j = 0; j < N; j++) {
+        int sum = 0;
+        for (int k = 0; k < N; k++) {
+          sum += mat_1[i*N+k]*mat_2[k*N+j];
+        }
+        mat_4[i*N+j ] = sum;
+      }
+    }
+  end_p = omp_get_wtime();
+```
+#### Resultados tiempo(s)
+Tamaño/Algoritmo | Secuencial | Paralelo
+--- | --- | --- | 
+32x32 | 0.0010 | 0.0013
+64x64 | 0.0011 | 0.0013
+128x128 | 0.0078 | 0.0029
+256x256 | 0.057 | 0.016
+
+- Se puede apreciar que si se colocan matrices pequeñas el tiempo paralelo es mayor dado que la parte paralela es insignificante y se demora más en la comunicación entre hebras.
+Sin embargo con matrices grandes se obtiene excelentes resultados:
+
+## Determinante de una matríz paralelo
+
+### Minor matriz
+![image](https://github.com/nic0q/openMP-HPC-workshop/assets/91075814/cdb010ad-1fc1-4258-a549-2b730758142c)
+- M|0,0|, M|0,1|, M|0,2| son minors
+
+### Función para obtener el minor
+```c
+float* minor(int N, int ix, int jx, float* matrix){
+  float* minor = calloc((N - 1) * (N - 1), sizeof(float));
+  int index = 0;
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; j++) {
+      if (i != ix && j != jx){
+        minor[index] = matrix[i * N + j];
+        index++;
+      }
+    }
+  }
+  return minor;
+}
+```
+### Función recursiva determinante
+```c
+float det(int N, float* matrix){
+  if(N == 2)
+    return matrix[0] * matrix[3] - matrix[1] * matrix[2];
+  else{
+    float n = 0;
+    for(int j = 0; j < N; j++){
+      n += matrix[j] * pow(-1, j) * det(N - 1, minor(N, 0, j, matrix));
+    }
+    return n;
+  }
+}
+```
+
+### Paralelización
+Cada hebra trabaja con recursividad para calcular el determinante de la matríz que le tocó pero no se crean nuevas hebras en niveles más profundos de la recursividad.
+```c
+#pragma omp parallel
+  {
+    #pragma omp for reduction(+ : sum)
+    for (int i = 0; i < N; i++){
+      sum += mat[i] * pow(-1, i) * det(N - 1, minor(N, 0, i, mat));
+    }
+  }
+```
+#### Resultados tiempo(s)
+Tamaño/Algoritmo | Secuencial | Paralelo
+--- | --- | --- | 
+6  | 0.0010 | 0.0013
+7  | 0.0011 | 0.0013
+8  | 0.0078 | 0.0029
+9  | 0.057 | 0.016
+10 | 0.057 | 0.016
+11 | 0.057 | 0.016
 
 ## Scope / Alcance
 Algo que no sabía de c hasta que tuve que ocupar "{" "}" para hacer un scope o bloque es que si uno tiene una claúsula "if" o "for" sin "{" "}" es tomada solametne para la línea de abajo.
@@ -188,57 +295,5 @@ Thread no. 1
 Thread no. 0
 ```
 
-## Ejemplo Multiplicación matricial paralela
-![image](https://github.com/nic0q/openMP-HPC-workshop/assets/91075814/ffec1f19-b88e-4992-acae-c193aea7d28e)
-![image](https://github.com/nic0q/openMP-HPC-workshop/assets/91075814/76980012-2756-4ff1-aed9-6c56fe2f6dd7)
-
-- Se puede apreciar que si se colocan matrices pequeñas el tiempo paralelo es mayor dado que la parte paralela es insignificante y se demora más en la comunicación entre hebras.
-Sin embargo con matrices grandes se obtiene excelentes resultados:
-
-### Multiplicación matricial secuencial
-```c
-double start_s, end_s;
-int N = 512;
-int* mat_1 = calloc(N * N, sizeof(int));
-int* mat_2 = calloc(N * N, sizeof(int));
-int* mat_3 = calloc(N * N, sizeof(int));
-int* mat_4 = calloc(N * N, sizeof(int));
-```
-```c
-start_s = omp_get_wtime();
-  for (int i = 0; i < N; i++) {   // O(N**3)
-    for (int j = 0; j < N; j++) {
-      sum = 0;
-      for (int k = 0; k < N; k++) {
-        sum += mat_1[i * N + k] * mat_2[k * N + j];
-      }
-      mat_3[i * N + j] = sum;
-    }
-  }
-  end_s = omp_get_wtime();
-```
-### Multiplicación matricial paralela
-```c
-double start_p, end_p;
-start_p = omp_get_wtime();
-  #pragma omp parallel for
-    for (int i = 0; i < N; i++) { 
-      for (int j = 0; j < N; j++) {
-        int sum = 0;
-        for (int k = 0; k < N; k++) {
-          sum += mat_1[i*N+k]*mat_2[k*N+j];
-        }
-        mat_4[i*N+j ] = sum;
-      }
-    }
-  end_p = omp_get_wtime();
-```
-#### Resultados tiempo(s)
-Tamaño/Algoritmo | Secuencial | Paralelo
---- | --- | --- | 
-32x32 | 0.0010 | 0.0013
-64x64 | 0.0011 | 0.0013
-128x128 | 0.0078 | 0.0029
-256x256 | 0.057 | 0.016
 512x512 | 0.420 | 0.105
 1024x1024 | 3.969 | 1.376
